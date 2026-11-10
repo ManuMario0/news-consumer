@@ -19,7 +19,7 @@ namespace nc {
             ClientStorage(const std::string& path);
             ~ClientStorage() = default;
 
-            int next_sequence_token(UID client_uid);
+            size_t next_sequence_token(UID client_uid);
             void mark_sequence_token_processed(UID client_id);
         
         private:

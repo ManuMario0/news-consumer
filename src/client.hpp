@@ -9,7 +9,7 @@
 #include <string>
 
 namespace nc {
-    const static int MAX_CLIENTS = 32;
+    inline constexpr int MAX_CLIENTS = 32;
 
     /*
     * Controlled uid class to avoid out-of-bound accesses.

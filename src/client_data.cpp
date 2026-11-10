@@ -1,5 +1,5 @@
 /*
-* client_data.hpp - Manage longterm storage of client states.
+* client_data.cpp - Manage longterm storage of client states.
 */
 
 #include <cstddef>
@@ -18,7 +18,7 @@ namespace nc {
     * Helpers.
     */
     struct Client {
-        int sequence_token;
+        size_t sequence_token;
     };
 
     class File {
@@ -61,15 +61,10 @@ namespace nc {
             }
 
             /*
-            * Map the file descriptor to memory.
-            *
-            * The file desciptor can be safely dropped once the memory is mapped.
-            * The file is mapped with MAP_SHARED to protect data on process crash.
-            *
-            * The implementation provides a raw pointer (no RAII) that should be destroyed with unmap.
+            * Returns the underlying native handle.
             */
-            void *map_file(const size_t size) {
-                return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            int native_handle() {
+                return fd;
             }
     };
 
@@ -79,15 +74,41 @@ namespace nc {
     struct ClientStorage::ClientList {
         std::span<Client, MAX_CLIENTS> clients;
 
-        static std::span<Client, MAX_CLIENTS> map_clients(File&fd) {
-            if (!fd.truncate(sizeof(Client[MAX_CLIENTS]))) {
-                throw std::runtime_error(std::string("truncate file failed: ") + strerror(errno));
-            }
-            void* mem = fd.map_file(sizeof(Client[MAX_CLIENTS]));
+        static const size_t CLIENT_LIST_SIZE = sizeof(Client[MAX_CLIENTS]);
+
+        static std::span<Client, MAX_CLIENTS> map_clients(File& fd) {
+            truncate_fd(fd);
+            int native_fd = fd.native_handle();
+            void* mem = map_file(native_fd, CLIENT_LIST_SIZE);
+            return cast_as_span(mem);
+        }
+
+        /*
+        * Map the file descriptor to memory.
+        *
+        * The file desciptor can be safely dropped once the memory is mapped.
+        * The file is mapped with MAP_SHARED to protect data on process crash.
+        *
+        * The implementation provides a raw pointer (no RAII) that should be destroyed with unmap.
+        *
+        * Throw `runtime_error` if the file could not be mapped properly.
+        */
+        static void *map_file(int fd, const size_t size) {
+            void* mem = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
             if (mem == MAP_FAILED) {
                 throw std::runtime_error(std::string("mmap failed: ") + strerror(errno));
             }
+            return mem;
+        }
+
+        static std::span<Client, MAX_CLIENTS> cast_as_span(void* mem) {
             return std::span<Client, MAX_CLIENTS>(static_cast<Client*>(mem), MAX_CLIENTS);
+        }
+
+        static void truncate_fd(File& fd) {
+            if (!fd.truncate(CLIENT_LIST_SIZE)) {
+                throw std::runtime_error(std::string("truncate file failed: ") + strerror(errno));
+            }
         }
  
         /*
@@ -123,7 +144,7 @@ namespace nc {
         client_list = std::make_unique<ClientList>(fd);
     }
 
-    int ClientStorage::next_sequence_token(UID client_uid) {
+    size_t ClientStorage::next_sequence_token(UID client_uid) {
         Client& client = client_list->client(client_uid.into_int());
 
         return client.sequence_token;
