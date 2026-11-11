@@ -102,11 +102,10 @@ namespace nc {
             throw std::runtime_error(std::string("setsockopt SO_REUSEADDR failed: ") + std::strerror(errno));
         }
 
-        struct sockaddr_in address {
-            .sin_family=AF_INET,
-            .sin_addr.s_addr=INADDR_ANY,
-            .sin_port=htons(port),
-        };
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_port = htons(port);
+        address.sin_addr.s_addr = htonl(INADDR_ANY);
 
         const int bind_ret = bind(fd, reinterpret_cast<struct sockaddr*>(&address), sizeof(address));
         if (bind_ret == -1) {

@@ -97,7 +97,7 @@ namespace nc {
         std::memcpy(&client_id, buffer, 4);
         client_id = ntohl(client_id);
 
-        if (client_id < 0 || client_id >= MAX_CLIENTS) {
+        if (client_id >= MAX_CLIENTS) {
             this->reset();
             return;
         }
