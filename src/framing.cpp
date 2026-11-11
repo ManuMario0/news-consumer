@@ -31,7 +31,7 @@ namespace nc {
         return payload.size() <= MAX_PAYLOAD_SIZE;
     }
 
-    bool FrameWriter::try_write(int fd, std::span<const uint8_t> payload) {
+    bool FrameWriter::try_write(const int fd, const std::span<const uint8_t> payload) {
         if (!this->is_writable()) {
             return false;
         }
@@ -56,7 +56,7 @@ namespace nc {
         return this->bytes_left_to_write() == 0;
     }
 
-    bool FrameWriter::flush(int fd) {
+    bool FrameWriter::flush(const int fd) {
         if (this->is_writable()) {
             return true;
         }
@@ -93,7 +93,7 @@ namespace nc {
         return frame_size == 0;
     }
 
-    bool FrameReader::try_read_header(int fd) {
+    bool FrameReader::try_read_header(const int fd) {
         if (!FrameReader::reading_header()) {
             return true;
         }
@@ -140,7 +140,7 @@ namespace nc {
         read_bytes = 0;
     }
 
-    int FrameReader::try_read(int fd, std::span<uint8_t> result_buffer) {
+    int FrameReader::try_read(const int fd, const std::span<uint8_t> result_buffer) {
         if (!this->try_read_header(fd)) {
             return -1;
         }

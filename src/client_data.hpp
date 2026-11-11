@@ -16,11 +16,10 @@
 namespace nc {
     class ClientStorage {
         public:
-            ClientStorage(const std::string& path);
-            ~ClientStorage() = default;
+            explicit ClientStorage(const std::string& path);
 
-            size_t next_sequence_token(UID client_uid);
-            void mark_sequence_token_processed(UID client_id);
+            size_t next_sequence_token(const UID client_uid);
+            void mark_sequence_token_processed(const UID client_id);
         
         private:
             struct ClientList;

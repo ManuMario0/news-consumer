@@ -37,7 +37,7 @@ namespace nc {
             *
             * Throws an error if the file descriptor is closed.
             */
-            bool try_write(int fd, std::span<const uint8_t> payload);
+            bool try_write(const int fd, const std::span<const uint8_t> payload);
             
             /*
             * Checks wether the frame writer is able to accept the next frame.
@@ -55,7 +55,7 @@ namespace nc {
             *
             * Throws an error if the file descriptor is closed.
             */
-            bool flush(int fd);
+            bool flush(const int fd);
         
         private:
             uint8_t buffer[MAX_FRAME_SIZE] {};
@@ -82,7 +82,7 @@ namespace nc {
             * exception if the received packet is ill-formed, in which case the connection
             * should be closed to reconnect with a fresh new state.
             */
-            int try_read(int fd, std::span<uint8_t> buffer);
+            int try_read(const int fd, const std::span<uint8_t> buffer);
         
         private:
             uint8_t buffer[MAX_FRAME_SIZE] {};
@@ -90,7 +90,7 @@ namespace nc {
             size_t read_bytes = 0;
             
             bool reading_header() const;
-            bool try_read_header(int fd);
+            bool try_read_header(const int fd);
             bool is_empty_payload() const;
             void reset();
     };

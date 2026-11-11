@@ -22,11 +22,11 @@ namespace nc {
                 }
             }
 
-            int into_int() {
+            int into_int() const {
                 return uid;
             }
         
         private:
-            int uid;
+            const int uid;
     };
 }

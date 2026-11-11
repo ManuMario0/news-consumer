@@ -32,7 +32,7 @@ namespace nc {
             *
             * Throw a `runtime_error` when the file could not be open/created.
             */
-            File(const std::string& path) {
+            explicit File(const std::string& path) {
                 fd = open(
                     path.c_str(),
                     O_RDWR | O_CREAT,
@@ -63,7 +63,7 @@ namespace nc {
             /*
             * Returns the underlying native handle.
             */
-            int native_handle() {
+            int native_handle() const {
                 return fd;
             }
     };
@@ -93,7 +93,7 @@ namespace nc {
         *
         * Throw `runtime_error` if the file could not be mapped properly.
         */
-        static void *map_file(int fd, const size_t size) {
+        static void *map_file(const int fd, const size_t size) {
             void* mem = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
             if (mem == MAP_FAILED) {
                 throw std::runtime_error(std::string("mmap failed: ") + strerror(errno));
@@ -116,7 +116,7 @@ namespace nc {
         *
         * Throw a `runtime_error` if the map fails.
         */
-        ClientList(File& fd): clients(map_clients(fd)) {}
+        explicit ClientList(File& fd): clients(map_clients(fd)) {}
 
         ~ClientList() {
             munmap(clients.data(), sizeof(Client[MAX_CLIENTS]));
@@ -133,7 +133,7 @@ namespace nc {
         /*
         * Direct indexing.
         */
-        Client& client(int client_uid) {
+        Client& client(const int client_uid) {
             return clients[client_uid];
         }
     };
@@ -144,13 +144,13 @@ namespace nc {
         client_list = std::make_unique<ClientList>(fd);
     }
 
-    size_t ClientStorage::next_sequence_token(UID client_uid) {
+    size_t ClientStorage::next_sequence_token(const UID client_uid) {
         Client& client = client_list->client(client_uid.into_int());
 
         return client.sequence_token;
     }
 
-    void ClientStorage::mark_sequence_token_processed(UID client_uid) {
+    void ClientStorage::mark_sequence_token_processed(const UID client_uid) {
         Client& client = client_list->client(client_uid.into_int());
 
         ++client.sequence_token;
