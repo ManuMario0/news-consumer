@@ -17,6 +17,7 @@ namespace nc {
     class TcpClientHandle {
         public:
             explicit TcpClientHandle(const int fd);
+            TcpClientHandle() = default;
             ~TcpClientHandle() {
                 if (fd > -1) {
                     close(fd);
@@ -45,9 +46,13 @@ namespace nc {
             * of bytes received and written to `buffer`.
             */
             int recv(const std::span<uint8_t> buffer);
+
+            int native_handle() const {
+                return fd;
+            }
         
         private:
-            int fd;
+            int fd = -1;
     };
 
     class TcpServer {

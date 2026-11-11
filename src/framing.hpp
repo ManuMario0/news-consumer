@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "transport.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -37,7 +38,7 @@ namespace nc {
             *
             * Throws an error if the file descriptor is closed.
             */
-            bool try_write(const int fd, const std::span<const uint8_t> payload);
+            bool try_write(TcpClientHandle& client, const std::span<const uint8_t> payload);
             
             /*
             * Checks wether the frame writer is able to accept the next frame.
@@ -55,7 +56,12 @@ namespace nc {
             *
             * Throws an error if the file descriptor is closed.
             */
-            bool flush(const int fd);
+            bool flush(TcpClientHandle& client);
+
+            /*
+            * Resets the frame buffer without flushing the leftover.
+            */
+            void reset();
         
         private:
             uint8_t buffer[MAX_FRAME_SIZE] {};
@@ -82,7 +88,12 @@ namespace nc {
             * exception if the received packet is ill-formed, in which case the connection
             * should be closed to reconnect with a fresh new state.
             */
-            int try_read(const int fd, const std::span<uint8_t> buffer);
+            int try_read(TcpClientHandle& client, const std::span<uint8_t> buffer);
+
+            /*
+            * Resets the frame buffer without flushing the leftover.
+            */
+            void reset();
         
         private:
             uint8_t buffer[MAX_FRAME_SIZE] {};
@@ -90,8 +101,7 @@ namespace nc {
             size_t read_bytes = 0;
             
             bool reading_header() const;
-            bool try_read_header(const int fd);
+            bool try_read_header(TcpClientHandle& client);
             bool is_empty_payload() const;
-            void reset();
     };
 }

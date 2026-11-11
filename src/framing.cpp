@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <stdexcept>
 #include <sys/_endian.h>
 #include <unistd.h>
@@ -31,7 +32,7 @@ namespace nc {
         return payload.size() <= MAX_PAYLOAD_SIZE;
     }
 
-    bool FrameWriter::try_write(const int fd, const std::span<const uint8_t> payload) {
+    bool FrameWriter::try_write(TcpClientHandle& client, const std::span<const uint8_t> payload) {
         if (!this->is_writable()) {
             return false;
         }
@@ -49,31 +50,19 @@ namespace nc {
         written = 0;
         frame_size = HEADER_SIZE + payload_size;
 
-        return this->flush(fd);
+        return this->flush(client);
     }
 
     bool FrameWriter::is_writable() const {
         return this->bytes_left_to_write() == 0;
     }
 
-    bool FrameWriter::flush(const int fd) {
+    bool FrameWriter::flush(TcpClientHandle& client) {
         if (this->is_writable()) {
             return true;
         }
 
-        ssize_t fresh_written_bytes = write(fd, &buffer[written], this->bytes_left_to_write());
-
-        if (fresh_written_bytes == 0) {
-            throw std::runtime_error(std::string("socket disconnected"));
-        }
-        
-        if (fresh_written_bytes < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                return false;
-            } else {
-                throw std::runtime_error(std::string("socket error") + std::strerror(errno));
-            }
-        }
+        ssize_t fresh_written_bytes = client.send(std::span(&buffer[written], this->bytes_left_to_write()));
 
         written += fresh_written_bytes;
 
@@ -84,6 +73,10 @@ namespace nc {
         return frame_size - written;
     }
 
+    void FrameWriter::reset() {
+        written = 0;
+        frame_size = 0;
+    }
 
     /*
     * ----------------- FrameReader impl -----------------
@@ -93,24 +86,12 @@ namespace nc {
         return frame_size == 0;
     }
 
-    bool FrameReader::try_read_header(const int fd) {
+    bool FrameReader::try_read_header(TcpClientHandle& client) {
         if (!FrameReader::reading_header()) {
             return true;
         }
 
-        size_t fresh_read_bytes = read(fd, &buffer[read_bytes], HEADER_SIZE - read_bytes);
-
-        if (fresh_read_bytes == 0) {
-            throw std::runtime_error(std::string("socket disconnected"));
-        }
-
-        if (fresh_read_bytes < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                return false;
-            } else {
-                throw std::runtime_error(std::string("socket error") + std::strerror(errno));
-            }
-        }
+        ssize_t fresh_read_bytes = client.recv(std::span(&buffer[read_bytes], HEADER_SIZE - read_bytes));
 
         read_bytes += fresh_read_bytes;
 
@@ -140,8 +121,8 @@ namespace nc {
         read_bytes = 0;
     }
 
-    int FrameReader::try_read(const int fd, const std::span<uint8_t> result_buffer) {
-        if (!this->try_read_header(fd)) {
+    int FrameReader::try_read(TcpClientHandle& client, const std::span<uint8_t> result_buffer) {
+        if (!this->try_read_header(client)) {
             return -1;
         }
 
@@ -150,19 +131,7 @@ namespace nc {
             return 0;
         }
 
-        size_t fresh_read_bytes = read(fd, &buffer[read_bytes], frame_size - read_bytes);
-        
-        if (fresh_read_bytes == 0) {
-            throw std::runtime_error(std::string("socket disconnected"));
-        }
-        
-        if (fresh_read_bytes < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                return false;
-            } else {
-                throw std::runtime_error(std::string("socket error") + std::strerror(errno));
-            }
-        }
+        ssize_t fresh_read_bytes = client.recv(std::span(&buffer[read_bytes], frame_size - read_bytes));
 
         read_bytes += fresh_read_bytes;
         if (read_bytes == frame_size) {

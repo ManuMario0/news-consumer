@@ -10,14 +10,13 @@
 #include <unistd.h>
 #include <span>
 
-#include "client.hpp"
 #include "client_data.hpp"
 
 namespace nc {
     /*
     * Helpers.
     */
-    struct Client {
+    struct SequenceToken {
         size_t sequence_token;
     };
 
@@ -72,11 +71,11 @@ namespace nc {
     * Implementation.
     */
     struct ClientStorage::ClientList {
-        std::span<Client, MAX_CLIENTS> clients;
+        std::span<SequenceToken, MAX_CLIENTS> clients;
 
-        static const size_t CLIENT_LIST_SIZE = sizeof(Client[MAX_CLIENTS]);
+        static const size_t CLIENT_LIST_SIZE = sizeof(SequenceToken[MAX_CLIENTS]);
 
-        static std::span<Client, MAX_CLIENTS> map_clients(File& fd) {
+        static std::span<SequenceToken, MAX_CLIENTS> map_clients(File& fd) {
             truncate_fd(fd);
             int native_fd = fd.native_handle();
             void* mem = map_file(native_fd, CLIENT_LIST_SIZE);
@@ -101,8 +100,8 @@ namespace nc {
             return mem;
         }
 
-        static std::span<Client, MAX_CLIENTS> cast_as_span(void* mem) {
-            return std::span<Client, MAX_CLIENTS>(static_cast<Client*>(mem), MAX_CLIENTS);
+        static std::span<SequenceToken, MAX_CLIENTS> cast_as_span(void* mem) {
+            return std::span<SequenceToken, MAX_CLIENTS>(static_cast<SequenceToken*>(mem), MAX_CLIENTS);
         }
 
         static void truncate_fd(File& fd) {
@@ -119,7 +118,7 @@ namespace nc {
         explicit ClientList(File& fd): clients(map_clients(fd)) {}
 
         ~ClientList() {
-            munmap(clients.data(), sizeof(Client[MAX_CLIENTS]));
+            munmap(clients.data(), CLIENT_LIST_SIZE);
         }
 
         /*
@@ -133,7 +132,7 @@ namespace nc {
         /*
         * Direct indexing.
         */
-        Client& client(const int client_uid) {
+        SequenceToken& client(const int client_uid) {
             return clients[client_uid];
         }
     };
@@ -144,14 +143,16 @@ namespace nc {
         client_list = std::make_unique<ClientList>(fd);
     }
 
+    ClientStorage::~ClientStorage() = default;
+
     size_t ClientStorage::next_sequence_token(const UID client_uid) {
-        Client& client = client_list->client(client_uid.into_int());
+        SequenceToken& client = client_list->client(client_uid.into_int());
 
         return client.sequence_token;
     }
 
     void ClientStorage::mark_sequence_token_processed(const UID client_uid) {
-        Client& client = client_list->client(client_uid.into_int());
+        SequenceToken& client = client_list->client(client_uid.into_int());
 
         ++client.sequence_token;
     }

@@ -94,6 +94,12 @@ namespace nc {
 
         set_nonblocking(fd);
 
+        int opt = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+            close(fd);
+            throw std::runtime_error(std::string("setsockopt SO_REUSEADDR failed: ") + std::strerror(errno));
+        }
+
         struct sockaddr_in address {
             .sin_family=AF_INET,
             .sin_addr.s_addr=INADDR_ANY,
