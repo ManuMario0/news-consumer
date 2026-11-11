@@ -2,7 +2,9 @@
 * client_data.cpp - Manage longterm storage of client states.
 */
 
+#include <cerrno>
 #include <cstddef>
+#include <cstring>
 #include <fcntl.h>
 #include <memory>
 #include <stdexcept>

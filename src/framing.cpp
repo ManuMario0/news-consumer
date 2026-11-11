@@ -2,12 +2,12 @@
 * framing.cpp - Framing over TCP socket.
 */
 
+#include <arpa/inet.h>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <span>
 #include <stdexcept>
-#include <sys/_endian.h>
 #include <unistd.h>
 
 #include "framing.hpp"

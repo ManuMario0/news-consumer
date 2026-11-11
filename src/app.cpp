@@ -3,7 +3,10 @@
 */
 
 #include <iostream>
+#include <optional>
 #include <poll.h>
+#include <string>
+#include <utility>
 
 #include "app.hpp"
 #include "client_data.hpp"

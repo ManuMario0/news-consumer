@@ -3,6 +3,8 @@
 */
 
 #include <arpa/inet.h>
+#include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 #include <stdexcept>
 #include <sys/socket.h>

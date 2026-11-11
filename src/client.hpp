@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
+#include <string>
 
 #include "client_data.hpp"
 #include "framing.hpp"

@@ -8,6 +8,7 @@
 * - Poll event loop.
 */
 
+#include <cstdint>
 #include <poll.h>
 #include <string>
 
