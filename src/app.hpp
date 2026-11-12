@@ -1,12 +1,12 @@
 /*
-* app.hpp - App life cycle.
-*
-* It uses the different modules to handle:
-* - Client connection ;
-* - Authentication ;
-* - Last known state recovery ;
-* - Poll event loop.
-*/
+ * app.hpp - App life cycle.
+ *
+ * It uses the different modules to handle:
+ * - Client connection ;
+ * - Authentication ;
+ * - Last known state recovery ;
+ * - Poll event loop.
+ */
 
 #include <cstdint>
 #include <poll.h>
@@ -18,18 +18,24 @@
 #include "uid.hpp"
 
 namespace nc {
-    class App {
-        public:
-            App(const std::string& recovery_path, const uint32_t port);
+class App {
+  public:
+    App(const std::string &recovery_path, const uint32_t port);
 
-            void run();
+    void run();
 
-        private:
-            Client clients[MAX_CLIENTS];
-            struct pollfd client_polls[MAX_CLIENTS + 1];
-            TcpServer server;
-            ClientStorage storage;
+  private:
+    Client clients[MAX_CLIENTS];
+    /*
+     * Client poll 0 is the polld of the server.
+     *
+     * Client poll 1 to `MAX_CLIENTS` + 1 maps one-to-one to the clients
+     * in `clients`.
+     */
+    struct pollfd client_polls[MAX_CLIENTS + 1];
+    TcpServer server;
+    ClientStorage storage;
 
-            void insert_new_client(TcpClientHandle client);
-    };
-}
+    void insert_new_client(TcpClientHandle client);
+};
+} // namespace nc

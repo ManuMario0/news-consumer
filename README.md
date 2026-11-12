@@ -74,3 +74,5 @@ Any anomalies in a client's data stream result in an immediate disconnection of 
 If the server crashes at just the right moment, it is technically possible for a payload not to be displayed on screen even though it has been recorded as received. This is because the server records reception of the packet in the storage file before printing the payload itself to the screen.
 
 If the host crashes and restarts, the contents of the storage file are undefined. We make use of the `MAP_SHARED` mechanism on UNIX-like systems to enable asynchronous writes to the storage file. If the host shuts down unexpectedly, the kernel cannot guarantee that dirty pages get written properly to disk.
+
+The client is fully trusted. As such, the communication protocol does not enforce to carry the sequence number with each payload. Therefore the server does not verify that the client don't disfunction by sending two times the same packet (in the eyes of the client with the same sequence identifier). It would result in the server a sequence number different to the one of the client.
